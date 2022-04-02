@@ -12,20 +12,33 @@ sid = SentimentIntensityAnalyzer()
 
 app = Flask(__name__)
 
+cache = {}
+
 
 @app.route('/prediction', methods=["POST"])
-def get_prediction():
+def prediction_endpoint():
+    tweet_id = request.json["id"]
     tweet_text = request.json["text"]
-    result = nltk_is_negative(tweet_text)
-
-    # can't detect reliable prediction result
-    # try evaluating with openai gpt3 model
-    if result is None:
-        result = openai_is_negative(tweet_text)
 
     return {
-        'is_negative': result
+        'is_negative': get_prediction(tweet_id, tweet_text)
     }
+
+
+def get_prediction(tweet_id, tweet_text):
+    result = None
+    # check if prediction is already computed in cache
+    if tweet_id in cache:
+        result = cache.get(tweet_id)
+    else:
+        result = nltk_is_negative(tweet_text)
+        # can't detect reliable prediction result
+        # try evaluating with openai gpt3 model
+        if result is None:
+            result = openai_is_negative(tweet_text)
+        # store result in cache for faster access later on
+        cache[tweet_id] = result
+    return result
 
 
 def nltk_is_negative(text):
