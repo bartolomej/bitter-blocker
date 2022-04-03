@@ -49,15 +49,10 @@ def get_predictions(tweets):
             cache[tweet["id"]] = tweet
         results[tweet["id"]] = tweet
 
-    openai_results = openai_is_negative(openai_queue)
-
-    for key in openai_results.keys():
+    for key in results.keys():
         if results[key]["is_negative"] is None:
-            results[key] = openai_results[key]
+            results[key]["is_negative"] = openai_is_negative(results[key])
 
-    # join the two dictionaries
-    z = openai_results.copy()
-    z.update(results)
     return results
 
 
@@ -73,16 +68,8 @@ def nltk_is_negative(text):
     return result["pos"] <= result["neg"]
 
 
-def openai_is_negative(tweets):
-    if len(tweets) == 0:
-        return {}
-
-    tweet_list = '\n'.join(list(map(lambda x: f"{x[0] + 1}. {x[1]['text']}", enumerate(tweets))))
-    prompt = f"""Classify the sentiment in these tweets:
-
-{tweet_list}
-
-Tweet sentiment ratings:"""
+def openai_is_negative(tweet):
+    prompt = f"Decide whether a Tweet's sentiment is positive, neutral, or negative.\n\nTweet: \"{tweet['text']}\"\nSentiment:",
 
     result = openai.Completion.create(
         engine="text-davinci-002",
@@ -99,12 +86,14 @@ Tweet sentiment ratings:"""
 
     print(result)
 
-    sentiments = result.choices[0].text.strip().split("\n")
-    results = dict()
-    for index, result in enumerate(sentiments):
-        tweets[index]["is_negative"] = get_gpt3_is_negative(result)
-        results[tweets[index]["id"]] = tweets[index]
-    return results
+    prediction = result.choices[0].text.strip()
+    if prediction == "Negative":
+        return True
+    elif prediction == "Positive":
+        return False
+    else:
+        # can't determine if predictor equals "Neutral" or some other possible value
+        return None
 
 
 def get_gpt3_is_negative(value):
@@ -119,4 +108,4 @@ def get_gpt3_is_negative(value):
 
 
 if __name__ == "__main__":
-    app.run(port=os.getenv("PORT", 3000), debug=True)
+    app.run(port=os.getenv("PORT", 8080), debug=True)
