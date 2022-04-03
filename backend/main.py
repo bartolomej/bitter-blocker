@@ -6,10 +6,8 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import os
 import openai
 import json
-import atexit
 
-# TODO: don't commit bellow line
-openai.api_key = "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"
+openai.api_key = os.getenv("GPT_ACCESS_TOKEN")
 
 # download required nltk assets
 nltk.download('vader_lexicon')
@@ -52,7 +50,7 @@ def cache_endpoint():
 @app.route('/stats')
 def stats_endpoint():
     return {
-        request_count
+        'request_count': request_count
     }
 
 
