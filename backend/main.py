@@ -5,8 +5,11 @@ import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import os
 import openai
+import json
+import atexit
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# TODO: don't commit bellow line
+openai.api_key = "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"
 
 # download required nltk assets
 nltk.download('vader_lexicon')
@@ -16,6 +19,22 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 cache = {}
+try:
+    with open("cache.json") as cache_file:
+        cache = json.load(cache_file)
+except:
+    pass
+
+print(cache)
+
+
+def save_cache():
+    global cache
+    print(cache)
+    with open("cache.json", "w") as cache_file:
+        json.dump(cache, cache_file)
+
+
 request_count = 0
 
 
@@ -26,6 +45,7 @@ def ping_endpoint():
 
 @app.route('/cache')
 def cache_endpoint():
+    save_cache()
     return cache
 
 
@@ -48,8 +68,8 @@ def prediction_endpoint():
 
 
 def get_predictions(tweets):
+    global cache
     results = {}
-    openai_queue = []
     for index, tweet in enumerate(tweets):
         tweet["is_negative"] = None
 
@@ -59,20 +79,16 @@ def get_predictions(tweets):
             continue
         is_negative = nltk_is_negative(tweet["text"])
 
-        # sentiment can't be determined using nltk
-        # add it to openai gpt3 queue
-        if is_negative is None:
-            openai_queue.append(tweet)
-        else:
-            # sentiment was successfully determined using nltk
-            tweet["is_negative"] = is_negative
-            cache[tweet["id"]] = tweet
+        # sentiment was successfully determined using nltk
+        tweet["is_negative"] = is_negative
+        cache[tweet["id"]] = tweet
         results[tweet["id"]] = tweet
 
-    for key in results.keys():
-        if results[key]["is_negative"] is None:
-            results[key]["is_negative"] = openai_is_negative(results[key])
-            cache[key] = results[key]
+        # sentiment can't be determined using nltk
+        # add it to openai gpt3 queue
+        if results[tweet["id"]]["is_negative"] is None:
+            results[tweet["id"]]["is_negative"] = openai_is_negative(tweet)
+            cache[tweet["id"]] = tweet
 
     return results
 
