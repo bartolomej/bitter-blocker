@@ -117,4 +117,4 @@ def get_gpt3_is_negative(value):
 
 
 if __name__ == "__main__":
-    app.run(port=os.getenv("PORT", 8080), debug=True)
+    app.run(port=os.getenv("PORT", 3000), debug=True)
