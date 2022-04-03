@@ -18,11 +18,11 @@ No more scrolling through your feed and seeing negativity! With Bitter Blocker, 
 ![](./assets/worthy.png)
 
 **Reasons to use BitterBlocker:**
-1. Bitter Blocker blocks negative tweets, so you can enjoy a positive social media experience.
-2. Bitter Blocker protects you from online negativity and trolls.
-3. Bitter Blocker helps you focus on the positive aspects of life.
-4. Bitter Blocker allows you to control your social media experience.
-5. Bitter Blocker is a free chrome extension!
+1. Blocks negative tweets, so you can enjoy a positive social media experience.
+2. Protects you from online negativity and trolls.
+3. Helps you focus on the positive aspects of life.
+4. Allows you to control your social media experience.
+5. Is a free Chrome extension!
 
 ## Installation
 
@@ -30,6 +30,17 @@ No more scrolling through your feed and seeing negativity! With Bitter Blocker, 
 2. Click "Load unpacked" button
 3. Select `bitter-blocker/chrome-extension` folder
 4. Enjoy your sweet Twitter feed!
+
+## System Overview
+
+We've developed a browser extension that can interact with the user's social media websites.
+
+For starters, we only support Twitter, but we could easily extend our solution to other platforms like Facebook, etc.
+
+Our browser extensions communicates with our backend server, which in turn interacts with a NLP (Natural Language Processing) tool of choice (we currently support [nltk](https://www.nltk.org/) and [OpenAI GPT3](https://openai.com/blog/openai-api/)).
+
+
+![](./assets/diagram.png)
 
 ## Contributors
 - [Yon Ploj](https://github.com/plojyon)
