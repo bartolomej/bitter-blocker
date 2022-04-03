@@ -1,4 +1,5 @@
 from flask import request, jsonify, Flask
+from flask_cors import CORS
 import re
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -12,6 +13,7 @@ nltk.download('vader_lexicon')
 sid = SentimentIntensityAnalyzer()
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 cache = {}
 
