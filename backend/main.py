@@ -1,4 +1,5 @@
-from flask import request, Flask
+from flask import request, jsonify, Flask
+import re
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import os
@@ -17,28 +18,43 @@ cache = {}
 
 @app.route('/prediction', methods=["POST"])
 def prediction_endpoint():
-    tweet_id = request.json["id"]
-    tweet_text = request.json["text"]
+    print(len(request.json))
+    if len(request.json) == 0:
+        return {'error': "Empty request body"}
 
-    return {
-        'is_negative': get_prediction(tweet_id, tweet_text)
-    }
+    return jsonify(get_predictions(request.json))
 
 
-def get_prediction(tweet_id, tweet_text):
-    result = None
-    # check if prediction is already computed in cache
-    if tweet_id in cache:
-        result = cache.get(tweet_id)
-    else:
-        result = nltk_is_negative(tweet_text)
-        # can't detect reliable prediction result
-        # try evaluating with openai gpt3 model
-        if result is None:
-            result = openai_is_negative(tweet_text)
-        # store result in cache for faster access later on
-        cache[tweet_id] = result
-    return result
+def get_predictions(tweets):
+    results = [{} for i in tweets]
+    openai_queue = []
+    for index, tweet in enumerate(tweets):
+        tweet["is_negative"] = None
+
+        # check if prediction is already computed in cache
+        if tweet["id"] in cache:
+            results[index] = cache.get(tweet["id"])
+            continue
+        is_negative = nltk_is_negative(tweet["text"])
+
+        # sentiment can't be determined using nltk
+        # add it to openai gpt3 queue
+        if is_negative is None:
+            openai_queue.append(tweet)
+        else:
+            # sentiment was successfully determined using nltk
+            tweet["is_negative"] = is_negative
+            cache[tweet["id"]] = is_negative
+        results[index] = tweet
+
+    openai_results = openai_is_negative(openai_queue)
+
+    # this loop is useless
+    for index, result in enumerate(results):
+        if result["is_negative"] is None:
+            results[index]["is_negative"] = openai_results[result["id"]]
+
+    return results
 
 
 def nltk_is_negative(text):
@@ -53,25 +69,42 @@ def nltk_is_negative(text):
     return result["pos"] <= result["neg"]
 
 
-def openai_is_negative(text):
+def openai_is_negative(tweets):
+    if len(tweets) == 0:
+        return []
+
+    tweet_list = '\n'.join(list(map(lambda x: f"{x[0] + 1}. {x[1]['text']}", enumerate(tweets))))
+    prompt = f"""Classify the sentiment in these tweets:
+
+{tweet_list}
+
+Tweet sentiment ratings:"""
+
     result = openai.Completion.create(
         engine="text-davinci-002",
-        prompt=f"Decide whether a Tweet's sentiment is positive, neutral, or negative.\n\nTweet: \"{text}\"\nSentiment:",
+        prompt=prompt,
         temperature=0,
         max_tokens=60,
         top_p=1,
         frequency_penalty=0.5,
         presence_penalty=0
     )
-    print(result)
     # can't determine if no choices were returned
     if len(result.choices) == 0:
         return None
 
-    prediction = result.choices[0].text.strip()
-    if prediction == "Negative":
+    sentiments = result.choices[0].text.strip().split("\n")
+    results = dict()
+    for index, result in enumerate(sentiments):
+        results[tweets[index]["id"]] = get_gpt3_is_negative(result)
+    return results
+
+
+def get_gpt3_is_negative(value):
+    value = re.sub(r'[0-9]+\.', '', value).strip()
+    if value == "Negative":
         return True
-    elif prediction == "Positive":
+    elif value == "Positive":
         return False
     else:
         # can't determine if predictor equals "Neutral" or some other possible value
