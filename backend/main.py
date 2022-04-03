@@ -52,6 +52,7 @@ def get_predictions(tweets):
     for key in results.keys():
         if results[key]["is_negative"] is None:
             results[key]["is_negative"] = openai_is_negative(results[key])
+            cache[key] = results[key]
 
     return results
 
