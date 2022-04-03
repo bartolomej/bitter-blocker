@@ -16,14 +16,34 @@ app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 cache = {}
+request_count = 0
+
+
+@app.route('/ping')
+def ping_endpoint():
+    return "Pong"
+
+
+@app.route('/cache')
+def cache_endpoint():
+    return cache
+
+
+@app.route('/stats')
+def stats_endpoint():
+    return {
+        request_count
+    }
 
 
 @app.route('/prediction', methods=["POST"])
 def prediction_endpoint():
+    global request_count
     print(request.json)
     if len(request.json) == 0:
         return {'error': "Empty request body"}
 
+    request_count += 1
     return jsonify(get_predictions(request.json))
 
 
