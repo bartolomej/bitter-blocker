@@ -1,0 +1,21 @@
+{
+	"name": "Bitter Blocker",
+	"description": "Keep your Twitter feed sweet!",
+	"version": "1.0",
+	"manifest_version": 3,
+	"content_scripts": [{
+			"matches": ["https://twitter.com/*"],
+			"js": ["contentscript.js"]
+	}],
+	"options_page": "options.html",
+	"permissions": ["storage", "activeTab", "scripting"],
+	"action": {
+		"default_popup": "popup.html"
+	},
+	"icons": {
+		"16": "bitterblocker_transparent.png",
+		"32": "bitterblocker_transparent.png",
+		"48": "bitterblocker_transparent.png",
+		"128": "bitterblocker_transparent.png"
+	}
+}
