@@ -18,7 +18,7 @@ cache = {}
 
 @app.route('/prediction', methods=["POST"])
 def prediction_endpoint():
-    print(len(request.json))
+    print(request.json)
     if len(request.json) == 0:
         return {'error': "Empty request body"}
 
@@ -26,14 +26,14 @@ def prediction_endpoint():
 
 
 def get_predictions(tweets):
-    results = [{} for i in tweets]
+    results = {}
     openai_queue = []
     for index, tweet in enumerate(tweets):
         tweet["is_negative"] = None
 
         # check if prediction is already computed in cache
         if tweet["id"] in cache:
-            results[index] = cache.get(tweet["id"])
+            results[tweet["id"]] = cache.get(tweet["id"])
             continue
         is_negative = nltk_is_negative(tweet["text"])
 
@@ -44,16 +44,18 @@ def get_predictions(tweets):
         else:
             # sentiment was successfully determined using nltk
             tweet["is_negative"] = is_negative
-            cache[tweet["id"]] = is_negative
-        results[index] = tweet
+            cache[tweet["id"]] = tweet
+        results[tweet["id"]] = tweet
 
     openai_results = openai_is_negative(openai_queue)
 
-    # this loop is useless
-    for index, result in enumerate(results):
-        if result["is_negative"] is None:
-            results[index]["is_negative"] = openai_results[result["id"]]
+    for key in openai_results.keys():
+        if results[key]["is_negative"] is None:
+            results[key] = openai_results[key]
 
+    # join the two dictionaries
+    z = openai_results.copy()
+    z.update(results)
     return results
 
 
@@ -71,7 +73,7 @@ def nltk_is_negative(text):
 
 def openai_is_negative(tweets):
     if len(tweets) == 0:
-        return []
+        return {}
 
     tweet_list = '\n'.join(list(map(lambda x: f"{x[0] + 1}. {x[1]['text']}", enumerate(tweets))))
     prompt = f"""Classify the sentiment in these tweets:
@@ -93,10 +95,13 @@ Tweet sentiment ratings:"""
     if len(result.choices) == 0:
         return None
 
+    print(result)
+
     sentiments = result.choices[0].text.strip().split("\n")
     results = dict()
     for index, result in enumerate(sentiments):
-        results[tweets[index]["id"]] = get_gpt3_is_negative(result)
+        tweets[index]["is_negative"] = get_gpt3_is_negative(result)
+        results[tweets[index]["id"]] = tweets[index]
     return results
 
 
@@ -112,4 +117,4 @@ def get_gpt3_is_negative(value):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=os.getenv("PORT", 8080), debug=True)
