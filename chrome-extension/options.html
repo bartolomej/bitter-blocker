@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<style>
+			#checkmark {
+				font-weight: bold;
+				color: green;
+				font-size: 2em;
+			}
+			#checkmark.invisible {
+				visibility: hidden;
+			}
+			.gone {
+				display: none;
+			}
+			#title {
+				font-size: 1.3em;
+			}
+			#online-tagline {
+				color: green;
+			}
+			#offline-tagline {
+				color: red;
+			}
+		</style>
+	</head>
+	<body>
+		<div style="text-align: center">
+			<img src="bitterblocker_transparent.png" alt="icon" width="256px"/>
+			<br/>
+			<b id="title">BitterBlocker@<span id="server-ip-label">127.0.0.1</span></b>
+			<p id="online-tagline" class="gone">Keeping your Twitter feed sweet!</p>
+			<p id="offline-tagline">Bitter Blocker is down, and we're all a little bit sadder.</p>
+			<br/>
+			Server ip: <input type="text" name="server-ip" id="server-ip" placeholder="127.0.0.1"/>
+			<span id="checkmark" class="invisible">✓</span>
+			<br/><br/>
+			Demo mode: <input type="checkbox" name="demo-toggle" id="demo-toggle">
+		</div>
+	</body>
+	<script src="options.js"></script>
+</html>
