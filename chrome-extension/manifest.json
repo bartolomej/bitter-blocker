@@ -8,7 +8,7 @@
 			"js": ["contentscript.js"]
 	}],
 	"options_page": "options.html",
-	"permissions": ["storage", "activeTab", "scripting"],
+	"permissions": ["storage", "activeTab"],
 	"action": {
 		"default_popup": "popup.html"
 	},
